@@ -2,14 +2,13 @@
 class Chat {
     constructor(){
         this.pubsub = new PubSub();
-        // this.wind = new ClientComponent(this, this.pubsub);
         this.logInButton = null;
         this.idField = null;
         this.message = null;
-        this.test = new createHtmlElements(this);
-        this.createHtmlElements();
         this.arrOfClients = [];
         this.arrOfMessage = [];
+        this.test = new createHtmlElements(this);
+        this.createHtmlElements();
         this.addZeroClient();
         this.pubsub.subscribe('send', this, this.addNewMessage);
         this.render();
@@ -22,42 +21,48 @@ class Chat {
     createHtmlElements(){
         this.logInButton = this.test.createButton('start', 'logIn');
         this.idField = this.test.createTextField('id', '');
-        this.test.testMethod(this.idField)
-        
-        // this.message = this.test.createChatField(this.arrOfMessage);
-
+        this.test.testMethod(this.idField);
     }
 
     render(){
         this.logInButton.addEventListener('click', ()=> this.takeClientId());
     }
+
     takeClientId(){
-        console.log('1');
+        let clientId = document.getElementById('id');
+        let id = clientId.value;
+        console.log(id);
+        //let strId = String(id);
         
-        let takeClientId = document.getElementById('id');
-        let id = takeClientId.value;
         this.checkNewClient(id);
-        takeClientId.value = '';
+        clientId.value = '';
     }
-    checkNewClient(id){
+
+    checkNewClient(nameNewClient){
         console.log('cheking');
 
         for(let i = 0; i < this.arrOfClients.length; i++){
-            let client = this.arrOfClients[i];
-            if(id == client.name){
-                console.error('error'); 
-            }else{
-                this.addNewClient(id);
+            let client = this.arrOfClients[i].name;
+            console.log(client);
+            for(let j = 1; j < this.arrOfClients.length; j++){
+                let secondClient = this.arrOfClients[j].name;
+                console.log(secondClient);
+                if(client === secondClient){
+                    console.error('error'); 
+                }else{
+                    console.log('!!!!'+client.name, nameNewClient);
+                    this.addNewClient(nameNewClient);   
+                }
             }
         }
-        console.log(id, this.arrOfClients);
-        
-
+        console.log(nameNewClient, this.arrOfClients);
     }
+
     addNewClient(id){
         let client = new ClientComponent(this ,this.pubsub, id);
         this.arrOfClients.push(client);
     }
+
     addNewMessage(data){
         if(data){
             const message = new Message(data)///////////////////////////////////////
@@ -80,8 +85,7 @@ class Chat {
 }
 
 class createHtmlElements {
-    constructor(chat){
-       // this.chat = chat;
+    constructor(){
         this.button = null;
         this.textField = null;
         this.messageP = null;
@@ -96,7 +100,6 @@ class createHtmlElements {
         buttonName.id = id;
         buttonName.value = value;
         this.button = buttonName;
-        
         
         this.div.appendChild(buttonName)
         document.body.appendChild(this.div);
@@ -144,7 +147,6 @@ class createHtmlElements {
         }   
         return entryField     
     }
-  
 }
 
 
@@ -154,7 +156,6 @@ class ClientComponent {
         this.pubsub = pubsub;
         this.name = name;
         this.test = new createHtmlElements();
-        // this.client = client;
         this.sendButton = null;
         this.stopButton = null;
         this.textField = null;
@@ -215,9 +216,7 @@ class Message {
             text : data.text
         };
         console.log(this.data);
-        
     }
-
 }
 
 class Subscription {
@@ -227,7 +226,6 @@ class Subscription {
         this.method = method;
     }
 }
-
 class PubSub {
     constructor() {
         this.subscriptions = []
@@ -254,10 +252,6 @@ let test = new Chat();
 
 
 
-
-
-
-
 // let options = {
 //     // year: 'numeric',
 //     // month: 'numeric',
@@ -266,8 +260,6 @@ let test = new Chat();
 //     minute: 'numeric',
 //     second: 'numeric'
 // }
-
-
 // class Client {
 //     constructor(chat, pubsub, name){
 //         // this.pubsub = pubsub;
