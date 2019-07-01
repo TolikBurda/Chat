@@ -6,18 +6,14 @@ class Chat {
         this.idField = null;
         this.message = null;
         this.arrOfClients = [];
+        this.arrOfId = [];
         this.arrOfMessage = [];
         this.test = new createHtmlElements(this);
         this.createHtmlElements();
-        this.addZeroClient();
         this.pubsub.subscribe('send', this, this.addNewMessage);
         this.render();
+    }
 
-    }
-    addZeroClient(){
-        const client = new ClientComponent(this ,this.pubsub, 'test');
-        this.arrOfClients.push(client);
-    }
     createHtmlElements(){
         this.logInButton = this.test.createButton('start', 'logIn');
         this.idField = this.test.createTextField('id', '');
@@ -32,30 +28,23 @@ class Chat {
         let clientId = document.getElementById('id');
         let id = clientId.value;
         console.log(id);
-        //let strId = String(id);
-        
         this.checkNewClient(id);
         clientId.value = '';
     }
 
-    checkNewClient(nameNewClient){
-        console.log('cheking');
-
-        for(let i = 0; i < this.arrOfClients.length; i++){
-            let client = this.arrOfClients[i].name;
-            console.log(client);
-            for(let j = 1; j < this.arrOfClients.length; j++){
-                let secondClient = this.arrOfClients[j].name;
-                console.log(secondClient);
-                if(client === secondClient){
-                    console.error('error'); 
-                }else{
-                    console.log('!!!!'+client.name, nameNewClient);
-                    this.addNewClient(nameNewClient);   
-                }
-            }
+    checkNewClient(id){
+        if(this.arrOfId.indexOf(id) == -1){
+            this.arrOfId.push(id);
+            this.addNewClient(id);
         }
-        console.log(nameNewClient, this.arrOfClients);
+    }
+    
+    addNewMessage(data){
+        if(data){
+            const message = new Message(data);
+            this.arrOfMessage.push(message);
+            this.pubsub.fireEvent('show', data);
+        }
     }
 
     addNewClient(id){
@@ -63,23 +52,9 @@ class Chat {
         this.arrOfClients.push(client);
     }
 
-    addNewMessage(data){
-        if(data){
-            const message = new Message(data)///////////////////////////////////////
-            this.arrOfMessage.push(message);
-            for(let i = 0; i < this.arrOfClients.length; i++){
-                let client = this.arrOfClients[i];
-                client.showMessageHistory()
-            }
-            console.log(this.addNewMessage.length);
-
-        }
-        
-    }
     deleteClient(id){
+        this.test.removeButton();
         console.log('delete client method');
-        
-        this.arrOfClients.splice(id)
         //if client click button "leave the chat" del this client fron this.arrOfClient
     }
 }
@@ -90,18 +65,18 @@ class createHtmlElements {
         this.textField = null;
         this.messageP = null;
         this.arrOfHtmlElements = [];
-        this.div = document.createElement('div');
-        //this.p = document.createElement('p');
+        this.div = null; //document.createElement('div');
+        this.p = document.createElement('p');
     }
     createButton(id, value){
-        // this.div = document.createElement('div');
+        this.div = document.createElement('div');
         let buttonName = document.createElement('input');
         buttonName.type = 'button';
         buttonName.id = id;
         buttonName.value = value;
         this.button = buttonName;
         
-        this.div.appendChild(buttonName)
+        this.div.appendChild(buttonName);
         document.body.appendChild(this.div);
         return this.button;
     }
@@ -114,23 +89,23 @@ class createHtmlElements {
         field.value = value;
         this.textField = field;     
         
-        this.div.appendChild(field)
+        this.div.appendChild(field);
         document.body.appendChild(this.div);
         return this.textField;
     }
     createChatField(value){
-        this.div = document.createElement('p');
-        let mess = document.createElement('input');
-        mess.value = value;
-        mess.id = 'mess';
-        mess.disabled = 'disabled';
-        this.messageP = mess;
-
-        this.div.appendChild(mess)
+        this.div = document.createElement('div');
+        this.div.innerHTML = value;
+        
         document.body.appendChild(this.div);
         return this.messageP;
-
     }
+
+    removeButton(){
+        // parentElem.removeChild(elem);
+        this.div.removeChild(this.button);
+    }
+
     testMethod(button){
         let entryField = button;
         let defaultName = 'enter your name here';
@@ -147,11 +122,13 @@ class createHtmlElements {
         }   
         return entryField     
     }
+    
 }
 
 
 class ClientComponent {
     constructor(chat, pubsub, name){
+        // this.id = id;
         this.chat = chat
         this.pubsub = pubsub;
         this.name = name;
@@ -159,8 +136,11 @@ class ClientComponent {
         this.sendButton = null;
         this.stopButton = null;
         this.textField = null;
+        this.messageText = null;
         this.createHtmlElements();
         this.render();
+
+        this.pubsub.subscribe('show', this, this.showMessageHistory);
     }
     createHtmlElements(){
         this.stopButton = this.test.createButton('end', 'leave the chat');
@@ -169,19 +149,13 @@ class ClientComponent {
 
         this.idField = this.test.createTextField('txt', '');
     }
-    showMessageHistory(){
-        for(let i = 0; i < this.chat.arrOfMessage.length; i++){
-            let message = this.chat.arrOfMessage[i];
-            console.log(message.data);
-            this.test.createChatField('name: ' + message.data.name);
-            this.test.createChatField('time: ' + message.data.date);
-            this.test.createChatField('mes: ' + message.data.text)
-        }
-        //arrOfMessage from class Chat//
+    showMessageHistory(data){
+        this.test.createChatField(data.date);
+        this.test.createChatField(data.name +': ' + data.text);
     }
     sendMessage(){
-        let takeMessage = document.getElementById('txt');
-        let textMessage = takeMessage.value;
+        this.messageText = document.getElementById('txt');
+        let textMessage = this.messageText.value;
         console.log(textMessage);
 
         let offsetDate = ()=> {
@@ -192,11 +166,12 @@ class ClientComponent {
                 second: 'numeric'
             }
             return time.toLocaleString("ru", options)
-        }
+        }  
+        
         this.pubsub.fireEvent('send', {name : this.name, text : textMessage, date : offsetDate()});
         
-        takeMessage.value = '';
-        console.log('user ' + this.name, 'text :' + takeMessage.value);
+        this.messageText.value = '';
+        console.log('user ' + this.name, 'text :' + this.messageText.value);
         //take text from input window, and send message to class chat
     }
     render(){
@@ -211,11 +186,11 @@ class ClientComponent {
 }
 class Message {
     constructor(data){
-        this.data = {
+        this.messageData = {
+            name : data.name,
             date : data.date,
             text : data.text
         };
-        console.log(this.data);
     }
 }
 
@@ -234,7 +209,6 @@ class PubSub {
     subscribe(event, obj, method) {
         var sub = new Subscription(event, obj, method);
         this.subscriptions.push(sub)
-        
     }
 
     fireEvent(event, data){
@@ -242,29 +216,9 @@ class PubSub {
             const sub = this.subscriptions[i];
             if (sub.event == event) {
                 sub.method.call(sub.obj, data)
-                
             }
         }
     }
 }
 
 let test = new Chat();
-
-
-
-// let options = {
-//     // year: 'numeric',
-//     // month: 'numeric',
-//     // day: 'numeric',
-//     hour: 'numeric',
-//     minute: 'numeric',
-//     second: 'numeric'
-// }
-// class Client {
-//     constructor(chat, pubsub, name){
-//         // this.pubsub = pubsub;
-//         this.name = name;
-//         this.window = new ClientComponent(chat, pubsub, this);
-//         //this.online = true;
-//     }
-// }
