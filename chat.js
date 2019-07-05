@@ -4,11 +4,11 @@ class Chat {
         this.pubsub = new PubSub();
         this.logInButton = null;
         this.idField = null;
-        this.message = null;
-        this.arrOfClients = [];
+        this.arrOfClients = [];///return checking by id of client. delete arrOfId.
         this.arrOfId = [];
         this.arrOfMessage = [];
-        this.test = new createHtmlElements(this);
+        this.clientId = null;
+        this.test = new createHtmlElements();
         this.createHtmlElements();
         this.pubsub.subscribe('send', this, this.addNewMessage);
         this.render();
@@ -17,19 +17,19 @@ class Chat {
     createHtmlElements(){
         this.logInButton = this.test.createButton('start', 'logIn');
         this.idField = this.test.createTextField('id', '');
-        this.test.testMethod(this.idField);
+        this.test.testMethod(this.idField, 'enter your name here');
     }
 
     render(){
         this.logInButton.addEventListener('click', ()=> this.takeClientId());
     }
-
+///
     takeClientId(){
-        let clientId = document.getElementById('id');
-        let id = clientId.value;
+        this.clientId = document.getElementById('id');
+        let id = this.clientId.value;
         console.log(id);
         this.checkNewClient(id);
-        clientId.value = '';
+       
     }
 
     checkNewClient(id){
@@ -43,19 +43,95 @@ class Chat {
         if(data){
             const message = new Message(data);
             this.arrOfMessage.push(message);
+            console.log('2', data.text);
             this.pubsub.fireEvent('show', data);
+            console.log('2.1', data.text);
         }
     }
 
     addNewClient(id){
         let client = new ClientComponent(this ,this.pubsub, id);
         this.arrOfClients.push(client);
+        this.clientId.value = '';
     }
 
     deleteClient(id){
         this.test.removeButton();
         console.log('delete client method');
+        ///    remove buttons from own instance
+        
         //if client click button "leave the chat" del this client fron this.arrOfClient
+    }
+}
+
+class ClientComponent {
+    constructor(chat, pubsub, name){
+        // this.id = id;
+        this.chat = chat
+        this.pubsub = pubsub;
+        this.name = name;
+        this.test = new createHtmlElements();
+        this.sendButton = null;
+        this.stopButton = null;
+        this.textField = null;
+
+        this.createHtmlElements();
+        this.pubsub.subscribe('show', this, this.showMessageHistory);
+        this.render();
+    }
+    createHtmlElements(){
+        this.stopButton = this.test.createButton('end', 'leave the chat');
+
+        this.sendButton = this.test.createButton('send', 'send');
+
+        this.textField = this.test.createTextField(this.name);
+        // this.test.testMethod(this.textField, 'enter your message here');
+        console.log(this.textField);
+    }
+    showMessageHistory(data){
+        this.test.createChatField(data.date);
+        this.test.createChatField(data.name +': ' + data.text);
+        console.log('3 '+ data.text);
+    }
+    sendMessage(){
+        let textMessage = document.getElementById(this.name);
+        let message = textMessage.value;
+        console.log('1', textMessage.value, message);
+
+        let offsetDate = ()=> {
+            let time = new Date();
+            let options = {
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric'
+            }
+            return time.toLocaleString("ru", options)
+        }  
+        
+        this.pubsub.fireEvent('send', {name : this.name, text : message, date : offsetDate()});
+        console.log('user ' + this.name, 'text :' + textMessage.value);
+        textMessage.value = null;//////////////////////////////////////////////////////////////why message text is missing?
+        console.log('the end');
+        //take text from input window, and send message to class chat
+    }
+    render(){
+        this.sendButton.addEventListener('click', ()=> this.sendMessage())
+        this.stopButton.addEventListener('click', ()=>{
+            // this.chat.deleteClient(this.name);//client id 
+            //delClient from Chat class
+        })
+        //buttons like "send","leave the chat"
+    }
+
+}
+
+class Message {
+    constructor(data){
+        this.messageData = {
+            name : data.name,
+            date : data.date,
+            text : data.text
+        };
     }
 }
 
@@ -76,6 +152,7 @@ class createHtmlElements {
         buttonName.value = value;
         this.button = buttonName;
         
+        this.arrOfHtmlElements.push(buttonName);
         this.div.appendChild(buttonName);
         document.body.appendChild(this.div);
         return this.button;
@@ -85,10 +162,15 @@ class createHtmlElements {
         // this.div = document.createElement('div');
         let field = document.createElement('input');
         field.type = 'text';
+        if(value){
+            field.value = value;
+        }else{
+            field.value = '';
+        }
         field.id = id;
-        field.value = value;
         this.textField = field;     
         
+        this.arrOfHtmlElements.push(field);////////////////last changes here/////////////////////////////////
         this.div.appendChild(field);
         document.body.appendChild(this.div);
         return this.textField;
@@ -106,9 +188,9 @@ class createHtmlElements {
         this.div.removeChild(this.button);
     }
 
-    testMethod(button){
+    testMethod(button, defName){
         let entryField = button;
-        let defaultName = 'enter your name here';
+        let defaultName = defName;
         entryField.value = defaultName;
         entryField.onfocus = ()=>{
             if (entryField.value == defaultName){
@@ -123,75 +205,6 @@ class createHtmlElements {
         return entryField     
     }
     
-}
-
-
-class ClientComponent {
-    constructor(chat, pubsub, name){
-        // this.id = id;
-        this.chat = chat
-        this.pubsub = pubsub;
-        this.name = name;
-        this.test = new createHtmlElements();
-        this.sendButton = null;
-        this.stopButton = null;
-        this.textField = null;
-        this.messageText = null;
-        this.createHtmlElements();
-        this.render();
-
-        this.pubsub.subscribe('show', this, this.showMessageHistory);
-    }
-    createHtmlElements(){
-        this.stopButton = this.test.createButton('end', 'leave the chat');
-
-        this.sendButton = this.test.createButton('send', 'send');
-
-        this.idField = this.test.createTextField('txt', '');
-    }
-    showMessageHistory(data){
-        this.test.createChatField(data.date);
-        this.test.createChatField(data.name +': ' + data.text);
-    }
-    sendMessage(){
-        this.messageText = document.getElementById('txt');
-        let textMessage = this.messageText.value;
-        console.log(textMessage);
-
-        let offsetDate = ()=> {
-            let time = new Date();
-            let options = {
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric'
-            }
-            return time.toLocaleString("ru", options)
-        }  
-        
-        this.pubsub.fireEvent('send', {name : this.name, text : textMessage, date : offsetDate()});
-        
-        this.messageText.value = '';
-        console.log('user ' + this.name, 'text :' + this.messageText.value);
-        //take text from input window, and send message to class chat
-    }
-    render(){
-        this.sendButton.addEventListener('click', ()=> this.sendMessage())
-        this.stopButton.addEventListener('click', ()=>{
-            this.chat.deleteClient(this.name);//client id 
-            //delClient from Chat class
-        })
-        //buttons like "send","leave the chat"
-    }
-
-}
-class Message {
-    constructor(data){
-        this.messageData = {
-            name : data.name,
-            date : data.date,
-            text : data.text
-        };
-    }
 }
 
 class Subscription {
@@ -222,3 +235,4 @@ class PubSub {
 }
 
 let test = new Chat();
+
