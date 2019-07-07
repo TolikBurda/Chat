@@ -43,9 +43,7 @@ class Chat {
         if(data){
             const message = new Message(data);
             this.arrOfMessage.push(message);
-            console.log('2', data.text);
             this.pubsub.fireEvent('show', data);
-            console.log('2.1', data.text);
         }
     }
 
@@ -59,7 +57,7 @@ class Chat {
         this.test.removeButton();
         console.log('delete client method');
         ///    remove buttons from own instance
-        
+
         //if client click button "leave the chat" del this client fron this.arrOfClient
     }
 }
@@ -85,18 +83,15 @@ class ClientComponent {
         this.sendButton = this.test.createButton('send', 'send');
 
         this.textField = this.test.createTextField(this.name);
-        // this.test.testMethod(this.textField, 'enter your message here');
-        console.log(this.textField);
+
     }
     showMessageHistory(data){
         this.test.createChatField(data.date);
         this.test.createChatField(data.name +': ' + data.text);
-        console.log('3 '+ data.text);
     }
     sendMessage(){
         let textMessage = document.getElementById(this.name);
         let message = textMessage.value;
-        console.log('1', textMessage.value, message);
 
         let offsetDate = ()=> {
             let time = new Date();
@@ -109,9 +104,7 @@ class ClientComponent {
         }  
         
         this.pubsub.fireEvent('send', {name : this.name, text : message, date : offsetDate()});
-        console.log('user ' + this.name, 'text :' + textMessage.value);
-        textMessage.value = null;//////////////////////////////////////////////////////////////why message text is missing?
-        console.log('the end');
+        textMessage.value = '';
         //take text from input window, and send message to class chat
     }
     render(){
@@ -170,16 +163,19 @@ class createHtmlElements {
         field.id = id;
         this.textField = field;     
         
-        this.arrOfHtmlElements.push(field);////////////////last changes here/////////////////////////////////
+        this.arrOfHtmlElements.push(field);
         this.div.appendChild(field);
         document.body.appendChild(this.div);
         return this.textField;
     }
     createChatField(value){
         this.div = document.createElement('div');
+        this.div.id = 'myId';
         this.div.innerHTML = value;
         
         document.body.appendChild(this.div);
+        console.log(this.div);
+        
         return this.messageP;
     }
 

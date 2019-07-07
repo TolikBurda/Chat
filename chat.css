@@ -1,0 +1,10 @@
+#start{  
+    padding-top: 1px;
+}
+#id{
+    padding-right: auto;
+}
+#myId{
+    background-color: rgb(228, 43, 212);
+}
+/* # get element by id */
