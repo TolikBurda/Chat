@@ -23,7 +23,7 @@ class Chat {
     render(){
         this.logInButton.addEventListener('click', ()=> this.takeClientId());
     }
-///
+
     takeClientId(){
         this.clientId = document.getElementById('id');
         let id = this.clientId.value;
@@ -43,6 +43,8 @@ class Chat {
         if(data){
             const message = new Message(data);
             this.arrOfMessage.push(message);
+            // console.log(_.first(this.arrOfMessage));
+            
             this.pubsub.fireEvent('show', data);
         }
     }
@@ -83,8 +85,8 @@ class ClientComponent {
         this.sendButton = this.test.createButton('send', 'send');
 
         this.textField = this.test.createTextField(this.name);
-
     }
+
     showMessageHistory(data){
         this.test.createChatField(data.date);
         this.test.createChatField(data.name +': ' + data.text);
@@ -135,12 +137,12 @@ class createHtmlElements {
         this.messageP = null;
         this.arrOfHtmlElements = [];
         this.div = null; //document.createElement('div');
-        this.p = document.createElement('p');
+        // this.p = document.createElement('p');
     }
     createButton(id, value){
         this.div = document.createElement('div');
         let buttonName = document.createElement('input');
-        buttonName.type = 'button';
+        buttonName.type = 'button';///class
         buttonName.id = id;
         buttonName.value = value;
         this.button = buttonName;
@@ -171,10 +173,13 @@ class createHtmlElements {
     createChatField(value){
         this.div = document.createElement('div');
         this.div.id = 'myId';
+        this.div.type = 'date'
+        // this.div.value = value;
         this.div.innerHTML = value;
-        
+        this.messageP = this.div;
+
         document.body.appendChild(this.div);
-        console.log(this.div);
+        console.log(this.div.id);
         
         return this.messageP;
     }
@@ -232,3 +237,17 @@ class PubSub {
 
 let test = new Chat();
 
+
+// let tmpl = ' <% let div = document.createElement('div') %> \
+// let buttonName = document.createElement('input');
+// buttonName.type = 'button';///class
+// buttonName.id = id;
+// buttonName.value = value;
+// this.button = buttonName;
+
+// this.arrOfHtmlElements.push(buttonName);
+// this.div.appendChild(buttonName);
+// document.body.appendChild(this.div);'
+
+var compiled = _.template('<div><%=%></div>');
+// console.log(compiled({ 'user': 'mustache' }));
