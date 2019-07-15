@@ -4,20 +4,20 @@ class Chat {
         this.pubsub = new PubSub();
         this.logInButton = null;
         this.idField = null;
-        this.arrOfClients = [];///return checking by id of client. delete arrOfId.
+        this.arrOfClients = [];///return checking by id of client. delete arrOfId. forEach();
         this.arrOfId = [];
         this.arrOfMessage = [];
         this.clientId = null;
-        this.test = new createHtmlElements();
+        this.test = new Template();
         this.createHtmlElements();
         this.pubsub.subscribe('send', this, this.addNewMessage);
         this.render();
     }
 
     createHtmlElements(){
-        this.logInButton = this.test.createButton('start', 'logIn');
-        this.idField = this.test.createTextField('id', '');
-        this.test.testMethod(this.idField, 'enter your name here');
+        this.test.createRegHtml();
+        this.logInButton = document.getElementById('LogIn_button');
+        // setTimeout(this.createHtmlElements(),3000);
     }
 
     render(){
@@ -25,9 +25,8 @@ class Chat {
     }
 
     takeClientId(){
-        this.clientId = document.getElementById('id');
+        this.clientId = document.getElementById('LogIn_field');
         let id = this.clientId.value;
-        console.log(id);
         this.checkNewClient(id);
        
     }
@@ -43,9 +42,8 @@ class Chat {
         if(data){
             const message = new Message(data);
             this.arrOfMessage.push(message);
-            // console.log(_.first(this.arrOfMessage));
-            
-            this.pubsub.fireEvent('show', data);
+        
+            this.pubsub.fireEvent('show', message);
         }
     }
 
@@ -70,7 +68,7 @@ class ClientComponent {
         this.chat = chat
         this.pubsub = pubsub;
         this.name = name;
-        this.test = new createHtmlElements();
+        this.test = new Template();
         this.sendButton = null;
         this.stopButton = null;
         this.textField = null;
@@ -80,16 +78,17 @@ class ClientComponent {
         this.render();
     }
     createHtmlElements(){
-        this.stopButton = this.test.createButton('end', 'leave the chat');
+        this.test.createClientHtml(this.name);
+        
+        this.stopButton = document.getElementById('end');
 
-        this.sendButton = this.test.createButton('send', 'send');
-
-        this.textField = this.test.createTextField(this.name);
+        this.sendButton = document.getElementById('send');
+        
+        // this.textField = document.getElementById();//////////////////last changes here 
     }
 
     showMessageHistory(data){
-        this.test.createChatField(data.date);
-        this.test.createChatField(data.name +': ' + data.text);
+        let test = this.test.createHistoryOfMessage(data);
     }
     sendMessage(){
         let textMessage = document.getElementById(this.name);
@@ -123,90 +122,95 @@ class ClientComponent {
 class Message {
     constructor(data){
         this.messageData = {
-            name : data.name,
-            date : data.date,
-            text : data.text
+            name : data.name, 
+            arrOfData : [{
+                name : data.name,
+                date : data.date,
+                text : data.text
+            }]
         };
     }
 }
 
-class createHtmlElements {
+class Template {
     constructor(){
-        this.button = null;
-        this.textField = null;
-        this.messageP = null;
-        this.arrOfHtmlElements = [];
-        this.div = null; //document.createElement('div');
-        // this.p = document.createElement('p');
+        this.mainConteiner = document.createElement('div');
+        this.mainConteiner.id = 'mainConteiner';
+        // document.body.appendChild(this.mainConteiner);
+
+        this.regConteiner = document.createElement('div');
+        this.regConteiner.class = 'regConteiner';
+        // this.mainConteiner.appendChild(this.regConteiner);
+
+        this.clientsConteiner = document.createElement('div');
+        this.clientsConteiner.class = 'clientsConteiner';
+        // this.mainConteiner.appendChild(this.clientsConteiner);
     }
-    createButton(id, value){
-        this.div = document.createElement('div');
-        let buttonName = document.createElement('input');
-        buttonName.type = 'button';///class
-        buttonName.id = id;
-        buttonName.value = value;
-        this.button = buttonName;
+
+    createRegHtml(){
+        let t = _.template(
+            '<div class="regConteiner">' + 
+                '<input type="text" id="LogIn_field">' +
+                '<button id="LogIn_button">LogIn</button>' + 
+            '</div>'
+        );
+
+        this.regConteiner.innerHTML = t();
+        // this.mainConteiner.appendChild(this.regConteiner);
+
+        let glo = document.getElementById('Global');//////////////////
+        glo.appendChild(this.regConteiner);
+        // document.body.appendChild(this.mainConteiner);
+        // document.body.innerHTML += t()//////////make the conteiner and add this shit to conteiner
+    }
+
+    createClientHtml(name){
+        let t = _.template(
+            '<div class="clientsConteiner" id = "this_one" >' + 
+               '<div id="end">' + 
+                    '<%= name %>' +
+                    '<button id="exit">exit</button>' + 
+                '</div>' + 
+                '<div class="message_box">' + 
+                    '<input type="text" id=<%= name %>>' +
+                    '<button id="send">send</button>' + 
+                '</div>' +
+            '</div>'
+        );
         
-        this.arrOfHtmlElements.push(buttonName);
-        this.div.appendChild(buttonName);
-        document.body.appendChild(this.div);
-        return this.button;
-    }
-
-    createTextField(id, value){
-        // this.div = document.createElement('div');
-        let field = document.createElement('input');
-        field.type = 'text';
-        if(value){
-            field.value = value;
-        }else{
-            field.value = '';
-        }
-        field.id = id;
-        this.textField = field;     
+        this.clientsConteiner.innerHTML = t({name});
+        console.log({name}, name);
         
-        this.arrOfHtmlElements.push(field);
-        this.div.appendChild(field);
-        document.body.appendChild(this.div);
-        return this.textField;
-    }
-    createChatField(value){
-        this.div = document.createElement('div');
-        this.div.id = 'myId';
-        this.div.type = 'date'
-        // this.div.value = value;
-        this.div.innerHTML = value;
-        this.messageP = this.div;
+        this.mainConteiner.appendChild(this.clientsConteiner);
 
-        document.body.appendChild(this.div);
-        console.log(this.div.id);
-        
-        return this.messageP;
-    }
-
-    removeButton(){
-        // parentElem.removeChild(elem);
-        this.div.removeChild(this.button);
-    }
-
-    testMethod(button, defName){
-        let entryField = button;
-        let defaultName = defName;
-        entryField.value = defaultName;
-        entryField.onfocus = ()=>{
-            if (entryField.value == defaultName){
-                entryField.value = '';
-            }
-        }
-        entryField.onblur = ()=>{
-            if (entryField.value == '') {
-                entryField.value = defaultName;
-            }
-        }   
-        return entryField     
+        let glo = document.getElementById('Global');/////////////////
+        glo.appendChild(this.mainConteiner);
+        // document.body.appendChild(this.mainConteiner);
     }
     
+    createHistoryOfMessage(userData){
+        let history = document.createElement('div');
+        let t = _.template(
+            '<ul class="history">' + 
+                '<% _.forEach(messageData.arrOfData, function(msg) { %>' + 
+                    '<p>' +
+                        'user <%= msg.name %> wrote "<%= msg.text %>" at <%= msg.date %>' +
+                    '</p> <% }); %>' + 
+            '</ul>'
+        );
+
+        history.innerHTML = t(userData);
+        this.clientsConteiner.appendChild(history)
+        this.mainConteiner.appendChild(this.clientsConteiner);
+
+        let glo = document.getElementById('Global');/////////////////////
+        glo.appendChild(this.mainConteiner);
+        // document.body.appendChild(this.mainConteiner);
+    }
+
 }
+
+
 
 class Subscription {
     constructor(event, obj, method){
@@ -217,37 +221,22 @@ class Subscription {
 }
 class PubSub {
     constructor() {
-        this.subscriptions = []
+        this.subscriptions = [];
     }
 
     subscribe(event, obj, method) {
         var sub = new Subscription(event, obj, method);
-        this.subscriptions.push(sub)
+        this.subscriptions.push(sub);
     }
 
     fireEvent(event, data){
         for (let i = 0; i < this.subscriptions.length; i++) {
             const sub = this.subscriptions[i];
             if (sub.event == event) {
-                sub.method.call(sub.obj, data)
+                sub.method.call(sub.obj, data);
             }
         }
     }
 }
 
 let test = new Chat();
-
-
-// let tmpl = ' <% let div = document.createElement('div') %> \
-// let buttonName = document.createElement('input');
-// buttonName.type = 'button';///class
-// buttonName.id = id;
-// buttonName.value = value;
-// this.button = buttonName;
-
-// this.arrOfHtmlElements.push(buttonName);
-// this.div.appendChild(buttonName);
-// document.body.appendChild(this.div);'
-
-var compiled = _.template('<div><%=%></div>');
-// console.log(compiled({ 'user': 'mustache' }));

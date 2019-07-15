@@ -1,10 +1,59 @@
-#start{  
-    padding-top: 1px;
+
+/* body{
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+} */
+
+#Global{
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    border: 3px solid grey;
 }
-#id{
-    padding-right: auto;
+
+/* #mainConteiner{
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+
+} */
+
+
+#mainConteiner{
+    /* display: block; */
+    max-width: 1200px;
+    min-width: 200px;
+    background-color: aqua;
+    border: 1px solid grey;
+    padding: 3px;
+    margin: 3px;
 }
-#myId{
+
+.regConteiner{
+    /* display: block; */
+    /* flex-basis: auto; */
+    background-color: brown;
+    height: 22px;
+}
+
+.clientsConteiner{
+    display: block;
+    /* width: 320px; */
+    border: 2px;
+    padding: 10px 20px;
+    box-sizing: border-box;
     background-color: rgb(228, 43, 212);
 }
+
+.history{
+    display: block;
+    /* width: 272px; */
+    /* margin: 2px; */
+    background-color: blueviolet;
+    border: 2px solid grey;
+    padding: 3px;
+}
 /* # get element by id */
+
+
