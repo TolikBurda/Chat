@@ -1,27 +1,13 @@
 
-/* body{
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-} */
-
-#Global{
+#global{
     display: flex;
     justify-content: space-around;
     flex-wrap: wrap;
     border: 3px solid grey;
 }
 
-/* #mainConteiner{
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-
-} */
-
 
 #mainConteiner{
-    /* display: block; */
     max-width: 1200px;
     min-width: 200px;
     background-color: aqua;
@@ -31,29 +17,22 @@
 }
 
 .regConteiner{
-    /* display: block; */
-    /* flex-basis: auto; */
     background-color: brown;
-    height: 22px;
+    border: 2px;
+    padding: 5px;
 }
 
 .clientsConteiner{
     display: block;
-    /* width: 320px; */
-    border: 2px;
-    padding: 10px 20px;
     box-sizing: border-box;
     background-color: rgb(228, 43, 212);
+    border: 2px;
+    padding: 10px 20px;
 }
 
 .history{
     display: block;
-    /* width: 272px; */
-    /* margin: 2px; */
     background-color: blueviolet;
     border: 2px solid grey;
     padding: 3px;
 }
-/* # get element by id */
-
-
