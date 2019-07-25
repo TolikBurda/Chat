@@ -4,7 +4,6 @@ class Component {
         this.element = null;
     }
     render() {
-        
     }
 }
 
@@ -50,43 +49,56 @@ class SomeChat extends Component {
 
 class Chat {
     constructor(){
+        // super();
         this.pubsub = new PubSub();
         this.logInButton = null;
         this.idField = null;
-        this.arrOfClients = [];///return checking by id of client. delete arrOfId. forEach();
-        this.arrOfId = [];
+        this.arrOfClients = [];
         this.arrOfMessage = [];
         this.clientId = null;
-        this.test = new Template();
+        this.template = _.template(
+            '<div class="regConteiner">' + 
+                '<input type="text" id="LogIn_field">' +
+                '<button id="LogIn_button">LogIn</button>' + 
+            '</div>'
+        );
         this.createHtmlElements();
         this.pubsub.subscribe('send', this, this.addNewMessage);
         this.render();
     }
 
     createHtmlElements(){
-        this.test.createRegHtml();
+        // this.test.createRegHtml();
+        this.template.createChatHtml();
         this.logInButton = document.getElementById('LogIn_button');
-        // setTimeout(this.createHtmlElements(),3000);
     }
 
     render(){
         this.logInButton.addEventListener('click', ()=> this.takeClientId());
+
     }
 
     takeClientId(){
         this.clientId = document.getElementById('LogIn_field');
         let id = this.clientId.value;
         this.checkNewClient(id);
-       
     }
 
     checkNewClient(id){
-        if(this.arrOfId.indexOf(id) == -1){
-            this.arrOfId.push(id);
+        if(this.arrOfClients.find(client => client.name === id)){
+            console.error('this user already been registered');
+        }else{
             this.addNewClient(id);
         }
     }
-    
+
+    addNewClient(id){
+        let client = new ClientComponent(this.pubsub, id);
+        this.arrOfClients.push(client);
+        this.clientId.value = '';
+        this.render();
+    }
+
     addNewMessage(data){
         if(data){
             const message = new Message(data);
@@ -94,12 +106,6 @@ class Chat {
         
             this.pubsub.fireEvent('show', message);
         }
-    }
-
-    addNewClient(id){
-        let client = new ClientComponent(this ,this.pubsub, id);
-        this.arrOfClients.push(client);
-        this.clientId.value = '';
     }
 
     deleteClient(id){
@@ -112,26 +118,50 @@ class Chat {
 }
 
 class ClientComponent {
-    constructor(chat, pubsub, name){
-        // this.id = id;
-        this.element = null
-        this.chat = chat
+    constructor(pubsub, name){
+        // super();
+        this.element = null;
         this.pubsub = pubsub;
         this.name = name;
-        this.test = new Template();
+        this.history = [];
+        this.template = _.template(
+            '<div class="clientsConteiner">' + 
+               '<div>' + 
+                    '<%= name %>' +
+                    '<button class="exit">exit</button>' + 
+                '</div>' + 
+                '<div class="message_box">' + 
+                    '<input type="text" class="textField">' +
+                    '<button class="send">send</button>' + 
+                    '<ul class="history">' + 
+                        '<% _.forEach(history, function(msg) { %>' + 
+                            '<p>' +
+                                'user <%= msg.name %> wrote "<%= msg.text %>" at <%= msg.date %>' +
+                            '</p> <% }); %>' + 
+                    '</ul>' +
+                '</div>' +
+            '</div>'
+        );
         this.sendButton = null;
         this.stopButton = null;
         this.textField = null;
-
-        this.createHtmlElements();
         this.pubsub.subscribe('show', this, this.showMessageHistory);
         this.render();
     }
-    createHtmlElements(){
-        
-        this.element = this.test.createClientHtml(this.name);
-        
-        this.stopButton = this.element.getElementsByClassName("end")[0];
+
+    render(){
+        this.element = this.template({name: this.name, history: this.history})
+        this.getButtons();
+        this.sendButton.addEventListener('click', ()=> this.sendMessage())
+        // this.stopButton.addEventListener('click', ()=>{
+            // this.chat.deleteClient(this.name);//client id 
+            //delClient from Chat class
+        // })
+        //buttons like "send","leave the chat"
+    }
+
+    getButtons(){
+        this.stopButton = this.element.getElementsByClassName("exit")[0];
 
         this.sendButton = this.element.getElementsByClassName("send")[0];
         
@@ -140,12 +170,11 @@ class ClientComponent {
     }
 
     showMessageHistory(data){
-        let test = this.test.createHistoryOfMessage(data);
+        this.history.push(data);
+        this.render();
     }
-    sendMessage(){
-        
-        let message = this.textField.value;
 
+    getDate(){
         let offsetDate = ()=> {
             let time = new Date();
             let options = {
@@ -154,56 +183,34 @@ class ClientComponent {
                 second: 'numeric'
             }
             return time.toLocaleString("ru", options)
-        }  
-        
-        this.pubsub.fireEvent('send', {name : this.name, text : message, date : offsetDate()});
-        this.textField.value = '';
-        //take text from input window, and send message to class chat
+        }
+        return offsetDate();
     }
-    render(){
-        this.sendButton.addEventListener('click', ()=> this.sendMessage())
-        this.stopButton.addEventListener('click', ()=>{
-            // this.chat.deleteClient(this.name);//client id 
-            //delClient from Chat class
-        })
-        //buttons like "send","leave the chat"
+    sendMessage(){
+        let message = this.textField.value;
+
+        this.pubsub.fireEvent('send', {name : this.name, text : message, date : this.getDate()});
+        this.textField.value = '';
     }
 
 }
 
 class Message {
     constructor(data){
-        this.messageData = {
-            name : data.name, 
-            arrOfData : [{
-                name : data.name,
-                date : data.date,
-                text : data.text
-            }]
-        };
-    }
-}
-
-class UserTemplate{
-    constructor(){
-
+        this.name = data.name;
+        this.text = data.text;
+        this.date = data.date;
     }
 }
 
 
-class Template {
+class ChatTemplate {
     constructor(){
         this.mainConteiner = document.createElement('div');
         this.mainConteiner.id = 'mainConteiner';
-
-        this.regConteiner = document.createElement('div');
-        this.regConteiner.class = 'regConteiner';
-
-        this.clientsConteiner = document.createElement('div');
-        this.clientsConteiner.class = 'clientsConteiner';
     }
 
-    createRegHtml(){
+    createChatHtml(){
         let t = _.template(
             '<div class="regConteiner">' + 
                 '<input type="text" id="LogIn_field">' +
@@ -211,59 +218,51 @@ class Template {
             '</div>'
         );
 
-        this.regConteiner.innerHTML = t();
-
+        this.mainConteiner.innerHTML = t();
+        // document.body.appendChild(this.mainConteiner);
+            
         let globalConteiner = document.getElementById('global');
-        globalConteiner.appendChild(this.regConteiner);
+        globalConteiner.appendChild(this.mainConteiner);
+    }
+}
+
+
+class ClientTemplate{
+    constructor(){
+        this.clientsConteiner = document.createElement('div');
+        this.clientsConteiner.id = 'clientsConteiner';
     }
 
-    createClientHtml(name){
+    createClientHtml(userData){
         let t = _.template(
-            '<div class="clientsConteiner" id = "<%= name %>" >' + 
+            '<div class="clientsConteiner" id = "<%= messageData.name %>" >' + 
                '<div>' + 
-                    '<%= name %>' +
+                    '<%= messageData.name %>' +
                     '<button class="exit">exit</button>' + 
                 '</div>' + 
                 '<div class="message_box">' + 
                     '<input type="text" class="textField">' +
                     '<button class="send">send</button>' + 
+                    '<ul class="history">' + 
+                        '<% _.forEach(messageData.arrOfData, function(msg) { %>' + 
+                            '<p>' +
+                                'user <%= msg.name %> wrote "<%= msg.text %>" at <%= msg.date %>' +
+                            '</p> <% }); %>' + 
+                    '</ul>' +
                 '</div>' +
             '</div>'
         );
-        
-        this.clientsConteiner.innerHTML = t({name});
-        console.log({name}, name);
-        
-        this.mainConteiner.appendChild(this.clientsConteiner);///////remove mein conteiner or client conteiner
 
-        let globalConteiner = document.getElementById('global');
-        globalConteiner.appendChild(this.mainConteiner);
+    
+        this.clientsConteiner.innerHTML = t(userData);
+
+        let mainConteiner = document.getElementById('mainConteiner');
+        mainConteiner.appendChild(this.clientsConteiner);  ///locked and look at string #16
+
 
         return this.clientsConteiner
     }
-    
-    createHistoryOfMessage(userData){
-        let history = document.createElement('div');
-        let t = _.template(
-            '<ul class="history">' + 
-                '<% _.forEach(messageData.arrOfData, function(msg) { %>' + 
-                    '<p>' +
-                        'user <%= msg.name %> wrote "<%= msg.text %>" at <%= msg.date %>' +
-                    '</p> <% }); %>' + 
-            '</ul>'
-        );
-
-        history.innerHTML = t(userData);
-        this.clientsConteiner.appendChild(history)
-        this.mainConteiner.appendChild(this.clientsConteiner);
-
-        let globalConteiner = document.getElementById('global');
-        globalConteiner.appendChild(this.mainConteiner);
-    }
-
 }
-
-
 
 class Subscription {
     constructor(event, obj, method){
