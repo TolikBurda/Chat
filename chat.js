@@ -1,57 +1,10 @@
 
-class Component {
-    constructor(){
-        this.element = null;
-    }
-    render() {
-    }
-}
-
-class SomeClient extends Component {
-    constructor(name){
-        super();
-        this.name = name;
-    }
-    render() {
-        var text = document.createElement('div');
-        text.innerHTML = this.name;
-        this.element = text;
-    }
-}
-
-class SomeChat extends Component {
-    constructor(){
-        super();
-        this.clients = [];
-    }
-
-    addClient(name){
-        this.clients.push(new SomeClient(name));
-    }
-
-    render() {
-        var wrapper = document.createElement('div');
-        this.clients.forEach(client => {
-            client.render();
-            wrapper.appendChild(client.element);
-        })
-        this.element = wrapper;
-    }
-}
-
-// var testChat = new SomeChat();
-// testChat.addClient('test1');
-// testChat.addClient('test2');
-// testChat.render();
-// console.log(testChat.element);
-
-
 
 class Chat {
     constructor(){
-        // super();
         this.pubsub = new PubSub();
         this.logInButton = null;
+        this.closeAppButton = null;
         this.idField = null;
         this.element = document.createElement('div');
         this.arrOfClients = [];
@@ -60,16 +13,56 @@ class Chat {
         this.template = _.template(
             '<div class="regConteiner">' + 
                 '<input type="text" id="LogIn_field">' +
-                '<button id="LogIn_button">LogIn</button>' + 
+                '<button id="LogIn_button">LogIn</button>' +
+                '<button id="close_application">Close application</button>' + 
                 '<div class="clients" >' +
             '</div>'
         );
         this.pubsub.subscribe('send', this, this.addNewMessage);
-        this.render();
+        this.pubsub.subscribe('delClient', this, this.delClient);
+        this.pubsub.subscribe('delMessage', this, this.delMessage);
+        if(localStorage['clients']){
+            this.load();
+        }else{ 
+            this.render();
+        }
+ 
+        // const clients = this.load();
+        // for(let client of clients){
+        //     this.addNewClient(client.name, client.regTime, client.history);
+        // }
     }
 
     getButton(){
         this.logInButton = document.getElementById('LogIn_button');
+        this.closeAppButton = document.getElementById('close_application');
+    }
+    
+    save(){
+        const clients = this.arrOfClients.map(client => { 
+            return {
+                name: client.name,
+                regTime: client.regTime,
+                history: client.history
+            }      
+        });
+        
+        localStorage.setItem('clients', JSON.stringify(clients));
+
+    }
+    load(){
+        let storage = ()=>{
+            const clients = JSON.parse(localStorage.getItem('clients'))
+            console.log(clients + '!!!!');
+            return clients
+        }
+        
+
+        const clients = storage();
+        for(let client of clients){
+            this.addNewClient(client.name, client.regTime, client.history);
+        }
+        
     }
 
     render(){
@@ -82,7 +75,11 @@ class Chat {
         document.body.appendChild(this.element);
         this.getButton();
         this.logInButton.addEventListener('click', ()=> this.takeClientId());
+        this.closeAppButton.addEventListener('click', ()=> this.closeApp());
 
+
+        this.save();
+        console.log('&');
     }
 
     takeClientId(){
@@ -99,11 +96,15 @@ class Chat {
         }
     }
 
-    addNewClient(id){
-        let client = new ClientComponent(this.pubsub, id);
+    addNewClient(id, regTime, history){
+        let client = new ClientComponent(this.pubsub, id, regTime, history);
         this.arrOfClients.push(client);
-        this.clientId.value = '';
         this.render();
+
+        if(this.clientId){
+            this.clientId.value = '';
+        }
+        
     }
 
     addNewMessage(data){
@@ -112,25 +113,39 @@ class Chat {
             this.arrOfMessage.push(message);
         
             this.pubsub.fireEvent('show', message);
+            this.render();
         }
     }
 
-    deleteClient(id){
-        this.test.removeButton();
-        console.log('delete client method');
-        ///    remove buttons from own instance
+    delMessage(data){
+        let messageToDel = this.arrOfMessage.findIndex(messages => messages.name === data.name);
+        console.log(messageToDel);
+        
+    }
+    delClient(data){
+        let clientToDel = this.arrOfClients.findIndex(clients => clients.name === data.name);
+        
+        this.arrOfClients.splice(clientToDel, 1);
+    
+        this.render();
+    }
 
-        //if client click button "leave the chat" del this client fron this.arrOfClient
+    closeApp(){
+        this.arrOfClients = [];
+        this.arrOfMessage = [];
+        localStorage.clear();
+        this.render()
     }
 }
 
+
 class ClientComponent {
-    constructor(pubsub, name){
-        // super();
+    constructor(pubsub, name, regTime, history){
         this.element = document.createElement('div');
         this.pubsub = pubsub;
         this.name = name;
-        this.history = [];
+        this.regTime = regTime || this.getDate();
+        this.history = history || [];
         this.template = _.template(
             '<div class="clientsConteiner">' + 
                '<div>' + 
@@ -144,6 +159,7 @@ class ClientComponent {
                         '<% _.forEach(history, function(msg) { %>' + 
                             '<p>' +
                                 'user <%= msg.name %> wrote "<%= msg.text %>" at <%= msg.date %>' +
+                                '<button class="del">del</button>' +
                             '</p> <% }); %>' + 
                     '</div>' +
                 '</div>' +
@@ -152,6 +168,7 @@ class ClientComponent {
         this.sendButton = null;
         this.stopButton = null;
         this.textField = null;
+        this.delMessageButton = null;
         this.pubsub.subscribe('show', this, this.showMessageHistory);
         this.render();
     }
@@ -160,8 +177,13 @@ class ClientComponent {
         this.element.innerHTML = this.template({name: this.name, history: this.history})
 
         this.getButtons();
+        this.textField.addEventListener('keypress', (e)=> {
+            if(e.keyCode == 13){
+                this.sendMessage()
+            }    
+        });
         this.sendButton.addEventListener('click', ()=> this.sendMessage());
-        //buttons like "send","leave the chat"
+        this.stopButton.addEventListener('click', ()=> this.removeClient());
     }
 
     getButtons(){
@@ -170,11 +192,13 @@ class ClientComponent {
         this.sendButton = this.element.getElementsByClassName("send")[0];
         
         this.textField = this.element.getElementsByClassName("textField")[0];
+
+        // this.delMessageButton = this.element.getElementsByClassName("del")[0];   
     }
 
     showMessageHistory(data){
         this.history.push(data);
-        this.render();
+        this.render(); 
     }
 
     getDate(){
@@ -196,7 +220,12 @@ class ClientComponent {
         this.pubsub.fireEvent('send', {name : this.name, text : message, date : this.getDate()});
         this.textField.value = '';
     }
-
+    removeMessage(){
+        this.pubsub.fireEvent('delMessage', {name : this.name})
+    }
+    removeClient(){
+        this.pubsub.fireEvent('delClient', {name : this.name})
+    }
 }
 
 class Message {
